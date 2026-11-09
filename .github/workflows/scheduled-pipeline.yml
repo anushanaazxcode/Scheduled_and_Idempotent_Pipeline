@@ -1,0 +1,47 @@
+name: Scheduled Sales Pipeline
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Restore SQLite database
+        uses: actions/cache/restore@v4
+        with:
+          path: sales.db
+          key: sales-db-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sales-db-
+
+      - name: Run incremental pipeline
+        run: python run_pipeline.py
+
+      - name: Save updated database
+        uses: actions/cache/save@v4
+        with:
+          path: sales.db
+          key: sales-db-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload pipeline output
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-output
+          path: |
+            sales.db
+            logs/pipeline.log

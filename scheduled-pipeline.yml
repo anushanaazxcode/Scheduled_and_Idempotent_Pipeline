@@ -1,0 +1,32 @@
+name: Scheduled Sales Pipeline
+
+on:
+  schedule:
+    - cron: "30 3 * * *"  # Runs daily at 09:00 IST (03:30 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run incremental pipeline
+        run: python run_pipeline.py
+
+      - name: Upload database and logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-run-output
+          path: |
+            sales.db
+            logs/pipeline.log
